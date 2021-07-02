@@ -5,3 +5,5 @@ mediapipe/provisioning_profile.mobileprovision
 .configure.bazelrc
 .user.bazelrc
 .dockerignore
+.clwb
+.idea

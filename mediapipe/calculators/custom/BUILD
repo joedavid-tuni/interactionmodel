@@ -15,3 +15,17 @@ cc_library(
     ],
     alwayslink = 1,
 )
+
+cc_library(
+    name = "interaction_model_calculator",
+    srcs = ["interaction_model_calculator.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:landmark_cc_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework/formats:rect_cc_proto",
+        "//mediapipe/framework/port:ret_check",
+    ],
+    alwayslink = 1,
+)

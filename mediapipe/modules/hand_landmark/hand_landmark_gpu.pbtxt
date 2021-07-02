@@ -161,3 +161,10 @@ node {
   input_stream: "NORM_RECT:hand_rect"
   output_stream: "NORM_LANDMARKS:hand_landmarks"
 }
+
+#interactionmodelcalculator
+node {
+      calculator: "InteractionModelCalculator"
+      input_stream: "NORM_LANDMARKS:scaled_landmarks"
+      input_stream: "NORM_RECT:hand_rect"
+    }

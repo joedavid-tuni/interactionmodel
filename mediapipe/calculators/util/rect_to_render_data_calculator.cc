@@ -29,8 +29,7 @@ constexpr char kNormRectsTag[] = "NORM_RECTS";
 constexpr char kRectsTag[] = "RECTS";
 constexpr char kRenderDataTag[] = "RENDER_DATA";
 
-RenderAnnotation::Rectangle* NewRect(
-    const RectToRenderDataCalculatorOptions& options, RenderData* render_data) {
+RenderAnnotation::Rectangle* NewRect(const RectToRenderDataCalculatorOptions& options, RenderData* render_data) {
   auto* annotation = render_data->add_render_annotations();
   annotation->mutable_color()->set_r(options.color().r());
   annotation->mutable_color()->set_g(options.color().g());
@@ -117,15 +116,20 @@ absl::Status RectToRenderDataCalculator::GetContract(CalculatorContract* cc) {
 
   if (cc->Inputs().HasTag(kNormRectTag)) {
     cc->Inputs().Tag(kNormRectTag).Set<NormalizedRect>();
+    LOG(INFO) << "kNormRectTag ACTIVE";
   }
   if (cc->Inputs().HasTag(kRectTag)) {
     cc->Inputs().Tag(kRectTag).Set<Rect>();
+      LOG(INFO) << "kRectTag ACTIVE";
+
   }
   if (cc->Inputs().HasTag(kNormRectsTag)) {
     cc->Inputs().Tag(kNormRectsTag).Set<std::vector<NormalizedRect>>();
+      LOG(INFO) << "kNormRectsTag ACTIVE";
   }
   if (cc->Inputs().HasTag(kRectsTag)) {
     cc->Inputs().Tag(kRectsTag).Set<std::vector<Rect>>();
+      LOG(INFO) << "kRectsTag ACTIVE";
   }
   cc->Outputs().Tag(kRenderDataTag).Set<RenderData>();
 
@@ -138,6 +142,7 @@ absl::Status RectToRenderDataCalculator::Open(CalculatorContext* cc) {
   options_ = cc->Options<RectToRenderDataCalculatorOptions>();
 
   return absl::OkStatus();
+
 }
 
 absl::Status RectToRenderDataCalculator::Process(CalculatorContext* cc) {

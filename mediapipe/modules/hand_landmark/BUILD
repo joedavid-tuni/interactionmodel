@@ -42,6 +42,7 @@ mediapipe_simple_subgraph(
         "//mediapipe/calculators/util:landmark_letterbox_removal_calculator",
         "//mediapipe/calculators/util:landmark_projection_calculator",
         "//mediapipe/calculators/util:thresholding_calculator",
+        "//mediapipe/calculators/custom:interaction_model_calculator"
     ],
 )
 
@@ -60,6 +61,7 @@ mediapipe_simple_subgraph(
         "//mediapipe/calculators/util:landmark_letterbox_removal_calculator",
         "//mediapipe/calculators/util:landmark_projection_calculator",
         "//mediapipe/calculators/util:thresholding_calculator",
+         "//mediapipe/calculators/custom:interaction_model_calculator"
     ],
 )
 

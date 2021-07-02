@@ -146,7 +146,17 @@ absl::Status TensorsToLandmarksCalculator::Process(CalculatorContext* cc) {
   auto view = input_tensors[0].GetCpuReadView();
   auto raw_landmarks = view.buffer<float>();
 
+//  LOG(INFO) << "raw landmarks" << raw_landmarks;
+//  LOG(INFO) << "num_dimensions" << num_dimensions;
+//  LOG(INFO) << "num_landmarks_" << num_landmarks_;
+
   LandmarkList output_landmarks;
+
+//  int ld1 = 9;
+//  int offset1 = ld1 * num_dimensions;
+//    LOG(INFO) << "raw landmark 9 X" << raw_landmarks[offset1];
+//    LOG(INFO) << "raw landmark 9 Y" << raw_landmarks[offset1 + 1];
+//    LOG(INFO) << "raw landmark 9 Z" << raw_landmarks[offset1 + 2];
 
   for (int ld = 0; ld < num_landmarks_; ++ld) {
     const int offset = ld * num_dimensions;

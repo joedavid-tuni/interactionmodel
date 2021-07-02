@@ -182,10 +182,7 @@ absl::Status RunMPPGraph() {
           LOG(INFO) << "Ignore empty frames from camera.";
           continue;
       }
-      else{
-        LOG(INFO) << "Obtained Kinect frame";
 
-      }
     // Capture opencv camera or video frame.
     // cv::Mat camera_frame_raw;
     // capture >> camera_frame_raw;
@@ -235,6 +232,7 @@ absl::Status RunMPPGraph() {
     if (!poller.Next(&packet)) break;
     std::unique_ptr<mediapipe::ImageFrame> output_frame;
 
+
     // Convert GpuBuffer to ImageFrame.
     MP_RETURN_IF_ERROR(gpu_helper.RunInGlContext(
         [&packet, &output_frame, &gpu_helper]() -> absl::Status {
@@ -265,7 +263,7 @@ absl::Status RunMPPGraph() {
 
     double seconds =  (double(end) - double(start)) / double(CLOCKS_PER_SEC);
 
-    LOG(INFO) << "Seconds " << seconds;
+//    LOG(INFO) << "Seconds " << seconds;
     
 
     double fpsLive = double(num_frames) / double(seconds);

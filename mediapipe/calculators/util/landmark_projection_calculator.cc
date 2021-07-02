@@ -155,8 +155,8 @@ class LandmarkProjectionCalculator : public CalculatorBase {
   }
 
   absl::Status Process(CalculatorContext* cc) override {
-    std::function<void(const NormalizedLandmark&, NormalizedLandmark*)>
-        project_fn;
+    std::function<void(const NormalizedLandmark&, NormalizedLandmark*)> project_fn;
+
     if (cc->Inputs().HasTag(kRectTag)) {
       if (cc->Inputs().Tag(kRectTag).IsEmpty()) {
         return absl::OkStatus();
@@ -184,8 +184,12 @@ class LandmarkProjectionCalculator : public CalculatorBase {
         new_landmark->set_x(new_x);
         new_landmark->set_y(new_y);
         new_landmark->set_z(new_z);
+
+
       };
-    } else if (cc->Inputs().HasTag(kProjectionMatrix)) {
+    }
+
+    else if (cc->Inputs().HasTag(kProjectionMatrix)) {
       if (cc->Inputs().Tag(kProjectionMatrix).IsEmpty()) {
         return absl::OkStatus();
       }
@@ -198,16 +202,18 @@ class LandmarkProjectionCalculator : public CalculatorBase {
         ProjectXY(lm, project_mat, new_landmark);
         new_landmark->set_z(z_scale * lm.z());
       };
-    } else {
+    }
+
+    else {
       return absl::InternalError("Either rect or matrix must be specified.");
     }
 
     CollectionItemId input_id = cc->Inputs().BeginId(kLandmarksTag);
     CollectionItemId output_id = cc->Outputs().BeginId(kLandmarksTag);
     // Number of inputs and outpus is the same according to the contract.
-    for (; input_id != cc->Inputs().EndId(kLandmarksTag);
-         ++input_id, ++output_id) {
-      const auto& input_packet = cc->Inputs().Get(input_id);
+    for (; input_id != cc->Inputs().EndId(kLandmarksTag); ++input_id, ++output_id) {
+
+        const auto& input_packet = cc->Inputs().Get(input_id);
       if (input_packet.IsEmpty()) {
         continue;
       }
@@ -219,6 +225,9 @@ class LandmarkProjectionCalculator : public CalculatorBase {
         NormalizedLandmark* new_landmark = output_landmarks.add_landmark();
         project_fn(landmark, new_landmark);
       }
+
+      LOG(INFO)<< "LANDMARK 9 X coords: " << output_landmarks.landmark(9).x();
+      LOG(INFO)<< "LANDMARK 9 y coords: " << output_landmarks.landmark(9).y();
 
       cc->Outputs().Get(output_id).AddPacket(
           MakePacket<NormalizedLandmarkList>(std::move(output_landmarks))
