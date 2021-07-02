@@ -46,3 +46,14 @@ node {
   input_stream: "NORM_RECTS:1:hand_rects_from_landmarks"
   output_stream: "IMAGE:output_video"
 }
+
+# Graph that implements interaction_model_calculatorv2
+node {
+  calculator: "InteractionModelCalculator"
+# input_stream: "IMAGE:input_video"
+# input_stream: "DETECTIONS:palm_detections"
+  input_stream: "LANDMARKS:hand_landmarks"
+  input_stream: "HANDEDNESS:handedness"
+# input_stream: "NORM_RECTS:0:hand_rects_from_palm_detections"
+# input_stream: "NORM_RECTS:1:hand_rects_from_landmarks"
+}

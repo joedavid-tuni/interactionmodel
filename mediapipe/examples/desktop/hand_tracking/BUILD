@@ -47,5 +47,6 @@ cc_binary(
     deps = [
         "//mediapipe/examples/desktop:demo_run_graph_main_gpu",
         "//mediapipe/graphs/hand_tracking:mobile_calculators",
+        "//mediapipe/calculators/custom:interaction_model_calculator"
     ],
 )
