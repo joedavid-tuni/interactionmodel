@@ -226,8 +226,8 @@ class LandmarkProjectionCalculator : public CalculatorBase {
         project_fn(landmark, new_landmark);
       }
 
-      LOG(INFO)<< "LANDMARK 9 X coords: " << output_landmarks.landmark(9).x();
-      LOG(INFO)<< "LANDMARK 9 y coords: " << output_landmarks.landmark(9).y();
+//      LOG(INFO)<< "LANDMARK 9 X coords: " << output_landmarks.landmark(9).x();
+//      LOG(INFO)<< "LANDMARK 9 y coords: " << output_landmarks.landmark(9).y();
 
       cc->Outputs().Get(output_id).AddPacket(
           MakePacket<NormalizedLandmarkList>(std::move(output_landmarks))

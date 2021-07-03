@@ -5,6 +5,7 @@
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/landmark.pb.h"
 #include "mediapipe/framework/formats/rect.pb.h"
+#include "mediapipe/framework/formats/classification.pb.h"
 
 
 namespace  mediapipe {
@@ -46,7 +47,9 @@ namespace  mediapipe {
         RET_CHECK(cc->Inputs().HasTag(landmarksTag));
         cc->Inputs().Tag(landmarksTag).Set< std::vector<mediapipe::NormalizedLandmarkList, std::allocator<mediapipe::NormalizedLandmarkList>>>();
 
-  
+        RET_CHECK(cc->Inputs().HasTag(handednessTag));
+        cc->Inputs().Tag(handednessTag).Set<std::vector<mediapipe::ClassificationList>>();
+
 
 
         return ::mediapipe::OkStatus();
@@ -95,7 +98,6 @@ namespace  mediapipe {
                 LOG(INFO) << c.landmark(9).x();
 
 //            LOG(INFO) << collection;
-
 //            for (const auto& item : collection) {
 //                LOG(INFO) << item;
 //                cc->Outputs().Tag("ITEM").AddPacket(
@@ -103,6 +105,40 @@ namespace  mediapipe {
 //                ForwardClonePackets(cc, loop_internal_timestamp_);
 //                ++loop_internal_timestamp_;
 //            }
+        }
+
+        std::vector<std::string> labels;
+        std::vector<float> scores;
+
+        if (!cc->Inputs().Tag(handednessTag).IsEmpty()) {
+            const auto& classifications =
+            cc->Inputs().Tag(handednessTag).Get<std::vector<mediapipe::ClassificationList>>();
+
+            LOG(INFO) << "Classification size: " << classifications.size();
+
+            for (auto& cl: classifications) {
+//                for (int i = 0; i < cl.classification_size(); ++i) {
+//
+//                labels[i] = cl.classification(i).label();
+//                scores[i] = cl.classification(i).score();
+//
+//                LOG(INFO) << "Label: " << labels[i] << " Score " << scores[i];
+//            }
+                for (int i = 0; i < cl.classification_size(); ++i) {
+                    LOG(INFO) << "LABEL: "<< cl.classification(i).label();
+                    LOG(INFO) << "SCORE: "<< cl.classification(i).score();
+                }
+            }
+//            labels.resize(classifications.classification_size());
+//            scores.resize(classifications.classification_size());
+//
+//            for (int i = 0; i < classifications.classification_size(); ++i) {
+//                labels[i] = classifications.classification(i).label();
+//                scores[i] = classifications.classification(i).score();
+//
+//                LOG(INFO) << "Label: " << labels[i] << " Score " << scores[i];
+//            }
+
         }
 
 
