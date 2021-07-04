@@ -40,6 +40,7 @@
 #include "include/libfreenect2/libfreenect2.hpp"
 
 constexpr char kInputStream[] = "input_video";
+constexpr char kInputDepthStream[] = "depth_stream";
 constexpr char kOutputStream[] = "output_video";
 constexpr char kWindowName[] = "MediaPipe";
 
@@ -82,7 +83,7 @@ absl::Status RunMPPGraph() {
   libfreenect2::PacketPipeline *pipeline = 0;
 
   bool enable_rgb = true;
-  bool enable_depth = false;
+  bool enable_depth = true;
 
   std::string serial = "";
 
@@ -113,7 +114,7 @@ absl::Status RunMPPGraph() {
     libfreenect2::SyncMultiFrameListener listener(types);
     libfreenect2::FrameMap frames;
 
-  
+
     dev->setColorFrameListener(&listener);
     dev->setIrAndDepthFrameListener(&listener);
 
@@ -166,16 +167,20 @@ absl::Status RunMPPGraph() {
 
      libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
       // libfreenect2::Frame *ir = frames[libfreenect2::Frame::Ir];
-      // libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
+       libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
 
      cv::Mat{rgb->height, rgb->width, CV_8UC4, rgb->data}.copyTo(rgbmat);
 //      cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(irmat);
-//      cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(depthmat);
+      cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(depthmat);
 //
+/// [registration]
+      registration->apply(rgb, depth, &undistorted, &registered, true, &depth2rgb);
+      /// [registration]
 //      cv::Mat(undistorted.height, undistorted.width, CV_32FC1, undistorted.data).copyTo(depthmatUndistorted);
 //      cv::Mat(registered.height, registered.width, CV_8UC4, registered.data).copyTo(rgbd);
-//      cv::Mat(depth2rgb.height, depth2rgb.width, CV_32FC1, depth2rgb.data).copyTo(rgbd2);
+      cv::Mat(depth2rgb.height, depth2rgb.width, CV_32FC1, depth2rgb.data).copyTo(rgbd2);
 
+      rgbd2 = rgbd2 / 4096.0f;
 
     if (rgbmat.empty()) {
 
@@ -204,8 +209,12 @@ absl::Status RunMPPGraph() {
     auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
         mediapipe::ImageFormat::SRGBA, camera_frame.cols, camera_frame.rows,
         mediapipe::ImageFrame::kGlDefaultAlignmentBoundary);
+
     cv::Mat input_frame_mat = mediapipe::formats::MatView(input_frame.get());
     camera_frame.copyTo(input_frame_mat);
+
+//      cv::Mat camera_depth_frame;
+//      cv::cvtColor(rgbd2, camera_depth_frame, cv::COLOR_BGR2RGBA);
 
     // Prepare and add graph input packet.
     size_t frame_timestamp_us =
@@ -225,7 +234,17 @@ absl::Status RunMPPGraph() {
           return absl::OkStatus();
         }));
 
-    
+      // Wrap Depth Mat into an ImageFrame.
+      auto input_depth_frame = absl::make_unique<mediapipe::ImageFrame>(
+              mediapipe::ImageFormat::VEC32F1, rgbd2.cols, rgbd2.rows,
+              mediapipe::ImageFrame::kGlDefaultAlignmentBoundary);
+      cv::Mat input_depth_frame_mat = mediapipe::formats::MatView(input_depth_frame.get());
+      rgbd2.copyTo(input_depth_frame_mat);
+
+      // Send  depth ImageFrame  packet into the graph.
+      MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
+              kInputDepthStream, mediapipe::Adopt(input_depth_frame.release())
+                      .At(mediapipe::Timestamp(frame_timestamp_us))));
 
     // Get the graph result packet, or stop if that fails.
     mediapipe::Packet packet;
@@ -264,11 +283,11 @@ absl::Status RunMPPGraph() {
     double seconds =  (double(end) - double(start)) / double(CLOCKS_PER_SEC);
 
 //    LOG(INFO) << "Seconds " << seconds;
-    
+
 
     double fpsLive = double(num_frames) / double(seconds);
-    
- 
+
+
     putText(output_frame_mat, "FPS: " + std::to_string(fpsLive), {50,50}, cv::FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255),2);
     // if (save_video) {
     //   if (!writer.isOpened()) {
@@ -291,6 +310,7 @@ absl::Status RunMPPGraph() {
   LOG(INFO) << "Shutting down.";
   // if (writer.isOpened()) writer.release();
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
+  MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputDepthStream));
   return graph.WaitUntilDone();
 }
 

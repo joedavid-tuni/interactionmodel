@@ -42,7 +42,8 @@ cc_library(
         "//mediapipe/framework/formats:rect_cc_proto",
         "//mediapipe/framework/port:ret_check",
 "//mediapipe/framework/formats:classification_cc_proto",
-
+"//mediapipe/framework/formats:image_frame_opencv",
+"//mediapipe/framework/port:opencv_highgui",
     ],
     alwayslink = 1,
 )

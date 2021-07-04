@@ -5,6 +5,9 @@
 # GPU image. (GpuBuffer)
 input_stream: "input_video"
 
+# Kinect Depth image. (GpuBuffer)
+input_stream: "depth_stream"
+
 # GPU image. (GpuBuffer)
 output_stream: "output_video"
 # Collection of detected/predicted hands, each represented as a list of
@@ -50,7 +53,7 @@ node {
 # Graph that implements interaction_model_calculatorv2
 node {
   calculator: "InteractionModelCalculator"
-# input_stream: "IMAGE:input_video"
+  input_stream: "IMAGE:depth_stream"
 # input_stream: "DETECTIONS:palm_detections"
   input_stream: "LANDMARKS:hand_landmarks"
   input_stream: "HANDEDNESS:handedness"

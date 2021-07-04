@@ -6,6 +6,8 @@
 #include "mediapipe/framework/formats/landmark.pb.h"
 #include "mediapipe/framework/formats/rect.pb.h"
 #include "mediapipe/framework/formats/classification.pb.h"
+#include "mediapipe/framework/formats/image_frame_opencv.h"
+#include "mediapipe/framework/port/opencv_highgui_inc.h"
 
 
 namespace  mediapipe {
@@ -14,6 +16,7 @@ namespace  mediapipe {
 
         constexpr char landmarksTag[] = "LANDMARKS";
         constexpr char handednessTag[] = "HANDEDNESS";
+        constexpr char imageTag[] = "IMAGE";
     }
 
     class InteractionModelCalculator : public CalculatorBase {
@@ -49,6 +52,9 @@ namespace  mediapipe {
 
         RET_CHECK(cc->Inputs().HasTag(handednessTag));
         cc->Inputs().Tag(handednessTag).Set<std::vector<mediapipe::ClassificationList>>();
+
+        RET_CHECK(cc->Inputs().HasTag(imageTag));
+        cc->Inputs().Tag(imageTag).Set<mediapipe::ImageFrame>();
 
 
 
@@ -138,6 +144,22 @@ namespace  mediapipe {
 //
 //                LOG(INFO) << "Label: " << labels[i] << " Score " << scores[i];
 //            }
+
+        }
+
+        if (!cc->Inputs().Tag(imageTag).IsEmpty()) {
+            const ImageFrame& image_frame =
+                    cc->Inputs().Tag(imageTag).Value().Get<ImageFrame>();
+            ImageFormat::Format format = image_frame.Format();
+            cv::Mat original_mat = formats::MatView(&image_frame);
+
+            LOG(INFO) << "FORMAT: " << format;
+            LOG(INFO) << "Byte Depth: " <<  image_frame.ByteDepth();
+            LOG(INFO) << "Height: " << image_frame.Height();
+            LOG(INFO) << "Width: " <<  image_frame.Width() ;
+
+            cv::imshow("Depth2Rgb", original_mat);
+            cv::waitKey(1);
 
         }
 
