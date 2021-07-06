@@ -9,6 +9,12 @@
 #include "mediapipe/framework/formats/image_frame_opencv.h"
 #include "mediapipe/framework/port/opencv_highgui_inc.h"
 
+// for memory mapping
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 
 namespace  mediapipe {
 
@@ -17,18 +23,29 @@ namespace  mediapipe {
         constexpr char landmarksTag[] = "LANDMARKS";
         constexpr char handednessTag[] = "HANDEDNESS";
         constexpr char imageTag[] = "IMAGE";
+        const char *cursor_coords_mapped_object_name = "/cursor";
+        int * mapped_cursor_memory = nullptr;
     }
 
     class InteractionModelCalculator : public CalculatorBase {
 
     public:
+
+
+
         static ::mediapipe::Status GetContract(CalculatorContract *cc);
 
         ::mediapipe::Status Open(CalculatorContext *cc) override;
 
         ::mediapipe::Status Process(CalculatorContext *cc) override;
 
+        ::mediapipe::Status Close(CalculatorContext *cc) override;
+
+
+
     private:
+
+
         float calculate_euclidean_distance(float Ax, float Ay, float Bx, float By){
 
             float X, Y, dist2, dist;
@@ -47,6 +64,17 @@ namespace  mediapipe {
 
     ::mediapipe::Status InteractionModelCalculator::GetContract(CalculatorContract *cc){
 
+        int fd_cursor =  shm_open(cursor_coords_mapped_object_name, O_RDWR | O_CREAT , S_IRUSR | S_IWUSR);
+        ftruncate(fd_cursor,  sizeof(int));
+
+        if (fd_cursor == -1) {
+            LOG(INFO) << "SHM OPEN FAILED.. exiting" ;
+            LOG(INFO) << "File Descriptor: " << fd_cursor ;
+        }
+        RET_CHECK(fd_cursor > 0 );
+
+        mapped_cursor_memory = (int *) mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd_cursor, 0);
+
         RET_CHECK(cc->Inputs().HasTag(landmarksTag));
         cc->Inputs().Tag(landmarksTag).Set< std::vector<mediapipe::NormalizedLandmarkList, std::allocator<mediapipe::NormalizedLandmarkList>>>();
 
@@ -55,8 +83,6 @@ namespace  mediapipe {
 
         RET_CHECK(cc->Inputs().HasTag(imageTag));
         cc->Inputs().Tag(imageTag).Set<mediapipe::ImageFrame>();
-
-
 
         return ::mediapipe::OkStatus();
     }
@@ -68,6 +94,10 @@ namespace  mediapipe {
     }
 
     ::mediapipe::Status InteractionModelCalculator::Process(CalculatorContext *cc){
+
+        LOG(INFO) << " ";
+
+
 
 //        const auto rect = &(cc->Inputs().Tag(normRectTag).Get<NormalizedRect>());
 //        float height = rect->height();
@@ -95,34 +125,19 @@ namespace  mediapipe {
 
 //        RET_CHECK_GT(landmarks.landmark_size(), 0) << "Empty list of landmarks";
 
-        if (!cc->Inputs().Tag(landmarksTag).IsEmpty()) {
-            const auto& collection =
-                    cc->Inputs().Tag(landmarksTag).Get<std::vector<mediapipe::NormalizedLandmarkList, std::allocator<mediapipe::NormalizedLandmarkList>>>();
-
-            // this works, size of collection is 2 if there are 2 hands
-            for (auto& c :collection)
-                LOG(INFO) << c.landmark(9).x();
-
-//            LOG(INFO) << collection;
-//            for (const auto& item : collection) {
-//                LOG(INFO) << item;
-//                cc->Outputs().Tag("ITEM").AddPacket(
-//                        MakePacket<ItemT>(item).At(loop_internal_timestamp_));
-//                ForwardClonePackets(cc, loop_internal_timestamp_);
-//                ++loop_internal_timestamp_;
-//            }
-        }
-
         std::vector<std::string> labels;
         std::vector<float> scores;
 
         if (!cc->Inputs().Tag(handednessTag).IsEmpty()) {
             const auto& classifications =
-            cc->Inputs().Tag(handednessTag).Get<std::vector<mediapipe::ClassificationList>>();
+                    cc->Inputs().Tag(handednessTag).Get<std::vector<mediapipe::ClassificationList>>();
 
-            LOG(INFO) << "Classification size: " << classifications.size();
+            LOG(INFO) << "Number of Hands Detected: " << classifications.size();
 
-            for (auto& cl: classifications) {
+//            for (auto& cl: classifications) {
+                for (int j = 0; j < classifications.size(); ++j){
+                    LOG(INFO) << "Hand  "<< j + 1;
+                   auto &cl = classifications[j];
 //                for (int i = 0; i < cl.classification_size(); ++i) {
 //
 //                labels[i] = cl.classification(i).label();
@@ -131,6 +146,7 @@ namespace  mediapipe {
 //                LOG(INFO) << "Label: " << labels[i] << " Score " << scores[i];
 //            }
                 for (int i = 0; i < cl.classification_size(); ++i) {
+//                    LOG(INFO) << "Hand i: "<< i;
                     LOG(INFO) << "LABEL: "<< cl.classification(i).label();
                     LOG(INFO) << "SCORE: "<< cl.classification(i).score();
                 }
@@ -147,16 +163,62 @@ namespace  mediapipe {
 
         }
 
+        float normalized_x = 0.0f;
+        float normalized_y = 0.0f;
+        int pixel_x = 1920;
+        int pixel_y = 1080;
+
+
+        if (!cc->Inputs().Tag(landmarksTag).IsEmpty()) {
+            const auto& collection =
+                    cc->Inputs().Tag(landmarksTag).Get<std::vector<mediapipe::NormalizedLandmarkList, std::allocator<mediapipe::NormalizedLandmarkList>>>();
+
+//            LOG(INFO) << collection.size() << " hands detected"; // another place to know number of hands
+            // this works, size of collection is 2 if there are 2 hands
+            for (auto& c :collection) {
+
+                normalized_x = c.landmark(9).x();
+                normalized_y = c.landmark(9).y();
+
+                pixel_x = normalized_x * pixel_x;
+                pixel_y = normalized_y * pixel_y;
+
+                LOG(INFO) << "(norm) Landmark 9 X: " << normalized_x;
+                LOG(INFO) << "(norm) Landmark 9 Y: " << normalized_y;
+
+                LOG(INFO) << "Landmark 9 X Px: " << pixel_x;
+                LOG(INFO) << "Landmark 9 Y Px: " << pixel_y;
+            }
+//            LOG(INFO) << collection;
+//            for (const auto& item : collection) {
+//                LOG(INFO) << item;
+//                cc->Outputs().Tag("ITEM").AddPacket(
+//                        MakePacket<ItemT>(item).At(loop_internal_timestamp_));
+//                ForwardClonePackets(cc, loop_internal_timestamp_);
+//                ++loop_internal_timestamp_;
+//            }
+        }
+
+        // mapping pixel coordinates to shared memory
+
+        * mapped_cursor_memory = pixel_x;
+
+
+
         if (!cc->Inputs().Tag(imageTag).IsEmpty()) {
             const ImageFrame& image_frame =
                     cc->Inputs().Tag(imageTag).Value().Get<ImageFrame>();
             ImageFormat::Format format = image_frame.Format();
             cv::Mat original_mat = formats::MatView(&image_frame);
 
-            LOG(INFO) << "FORMAT: " << format;
-            LOG(INFO) << "Byte Depth: " <<  image_frame.ByteDepth();
-            LOG(INFO) << "Height: " << image_frame.Height();
-            LOG(INFO) << "Width: " <<  image_frame.Width() ;
+//            LOG(INFO) << "FORMAT: " << format;
+//            LOG(INFO) << "Byte Depth: " <<  image_frame.ByteDepth();
+//            LOG(INFO) << "Height: " << image_frame.Height();
+//            LOG(INFO) << "Width: " <<  image_frame.Width() ;
+//
+            float landmark_9_depth_pixel = original_mat.at<float>(pixel_y, pixel_x);
+
+            LOG(INFO) << "landmark_9_depth_pixel " << landmark_9_depth_pixel*4096.0f /10.0 << "cm";
 
             cv::imshow("Depth2Rgb", original_mat);
             cv::waitKey(1);
@@ -223,8 +285,15 @@ namespace  mediapipe {
 //                LOG(INFO) << "Unsupported Gesture";
 //
 //        }
+
+
         return ::mediapipe::OkStatus();
 
+    }
+
+    ::mediapipe::Status InteractionModelCalculator::Close (CalculatorContext *cc) {
+        shm_unlink(cursor_coords_mapped_object_name);
+        return ::mediapipe::OkStatus();
     }
 
 }

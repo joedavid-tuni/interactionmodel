@@ -46,4 +46,5 @@ cc_library(
 "//mediapipe/framework/port:opencv_highgui",
     ],
     alwayslink = 1,
+    linkopts = ["-lrt"]
 )
