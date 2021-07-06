@@ -65,7 +65,7 @@ namespace  mediapipe {
     ::mediapipe::Status InteractionModelCalculator::GetContract(CalculatorContract *cc){
 
         int fd_cursor =  shm_open(cursor_coords_mapped_object_name, O_RDWR | O_CREAT , S_IRUSR | S_IWUSR);
-        ftruncate(fd_cursor,  sizeof(int));
+        ftruncate(fd_cursor,  sizeof(int) * 2);
 
         if (fd_cursor == -1) {
             LOG(INFO) << "SHM OPEN FAILED.. exiting" ;
@@ -73,7 +73,7 @@ namespace  mediapipe {
         }
         RET_CHECK(fd_cursor > 0 );
 
-        mapped_cursor_memory = (int *) mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd_cursor, 0);
+        mapped_cursor_memory = (int *) mmap(NULL, sizeof(int) * 2, PROT_READ | PROT_WRITE, MAP_SHARED, fd_cursor, 0);
 
         RET_CHECK(cc->Inputs().HasTag(landmarksTag));
         cc->Inputs().Tag(landmarksTag).Set< std::vector<mediapipe::NormalizedLandmarkList, std::allocator<mediapipe::NormalizedLandmarkList>>>();
@@ -202,6 +202,7 @@ namespace  mediapipe {
         // mapping pixel coordinates to shared memory
 
         * mapped_cursor_memory = pixel_x;
+        * (mapped_cursor_memory + 1) = pixel_y;
 
 
 
