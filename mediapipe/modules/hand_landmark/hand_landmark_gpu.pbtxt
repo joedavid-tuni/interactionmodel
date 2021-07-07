@@ -50,7 +50,7 @@ node {
   output_stream: "TENSORS:output_tensors"
   options: {
     [mediapipe.InferenceCalculatorOptions.ext] {
-      model_path: "mediapipe/modules/hand_landmark/hand_landmark.tflite"
+      model_path: "/home/robolab/Downloads/mediapipe/mediapipe/modules/hand_landmark/hand_landmark.tflite"
     }
   }
 }
@@ -110,7 +110,7 @@ node {
   options: {
     [mediapipe.TensorsToClassificationCalculatorOptions.ext] {
       top_k: 1
-      label_map_path: "mediapipe/modules/hand_landmark/handedness.txt"
+      label_map_path: "/home/robolab/Downloads/mediapipe/mediapipe/modules/hand_landmark/handedness.txt"
       binary_classification: true
     }
   }

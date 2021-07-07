@@ -78,4 +78,5 @@ cc_library(
         "@com_google_absl//absl/flags:parse",
 "@libfreenect2//:libfreenect2"
     ],
+    linkopts = ["-lrt"]
 )

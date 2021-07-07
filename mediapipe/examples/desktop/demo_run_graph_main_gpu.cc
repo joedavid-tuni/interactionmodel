@@ -39,6 +39,13 @@
 #include "include/libfreenect2/config.h"
 #include "include/libfreenect2/libfreenect2.hpp"
 
+
+// for memory mapping
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 constexpr char kInputStream[] = "input_video";
 constexpr char kInputDepthStream[] = "depth_stream";
 constexpr char kOutputStream[] = "output_video";
@@ -155,7 +162,28 @@ absl::Status RunMPPGraph() {
 
   LOG(INFO) << "Start grabbing and processing frames.";
   bool grab_frames = true;
-  while (grab_frames) {
+
+  // setting up shared memory
+
+    const char *kinect_status_object_name = "/kinectStatus";
+    char * mapped_kinect_status_memory = nullptr;
+    int fd_kinectS =  shm_open(kinect_status_object_name, O_RDWR , S_IRUSR | S_IWUSR);
+    ftruncate(fd_kinectS,  sizeof(char) );
+
+    LOG(INFO) << "File Descriptor: " << fd_kinectS ;
+
+    if (fd_kinectS == -1) {
+        LOG(INFO) << "SHM OPEN FAILED.. exiting" ;
+        LOG(INFO) << "File Descriptor: " << fd_kinectS ;
+    }
+    RET_CHECK(fd_kinectS > 0 );
+
+    mapped_kinect_status_memory = (char *) mmap(NULL, sizeof(char), PROT_READ | PROT_WRITE, MAP_SHARED, fd_kinectS, 0);
+    LOG(INFO) <<" mapped_kinect_status_memory: "<< int(*mapped_kinect_status_memory);
+  while (grab_frames &&  *mapped_kinect_status_memory) {
+//  while (grab_frames ) {
+
+      LOG(INFO) <<" mapped_kinect_status_memory: "<< int(*mapped_kinect_status_memory);
 
     clock_t start = clock();
 
@@ -279,16 +307,12 @@ absl::Status RunMPPGraph() {
       cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
 
     clock_t end = clock();
+//
+//    double seconds =  (double(end) - double(start)) / double(CLOCKS_PER_SEC);
+//    double fpsLive = double(num_frames) / double(seconds);
+//    putText(output_frame_mat, "FPS: " + std::to_string(fpsLive), {50,50}, cv::FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255),2);
+//    cv::imshow(kWindowName, output_frame_mat);
 
-    double seconds =  (double(end) - double(start)) / double(CLOCKS_PER_SEC);
-
-//    LOG(INFO) << "Seconds " << seconds;
-
-
-    double fpsLive = double(num_frames) / double(seconds);
-
-
-    putText(output_frame_mat, "FPS: " + std::to_string(fpsLive), {50,50}, cv::FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255),2);
     // if (save_video) {
     //   if (!writer.isOpened()) {
     //     LOG(INFO) << "Prepare video writer.";
@@ -299,7 +323,7 @@ absl::Status RunMPPGraph() {
     //   }
     //   writer.write(output_frame_mat);
     // } else {
-      cv::imshow(kWindowName, output_frame_mat);
+
       // Press any key to exit.
       const int pressed_key = cv::waitKey(1);
       if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
