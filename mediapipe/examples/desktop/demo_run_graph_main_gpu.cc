@@ -144,13 +144,15 @@ absl::Status RunMPPGraph() {
   // }
   // RET_CHECK(capture.isOpened());
 
-//   cv::VideoWriter writer;
+//  cv::VideoCapture capture;
+   cv::VideoWriter writer;
 //   const bool save_video = !absl::GetFlag(FLAGS_output_video_path).empty();
+   const bool save_video = true;
 //   if (!save_video) {
 //     cv::namedWindow(kWindowName, /*flags=WINDOW_AUTOSIZE*/ 1);
 // #if (CV_MAJOR_VERSION >= 3) && (CV_MINOR_VERSION >= 2)
-//     capture.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-//     capture.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+//     capture.set(cv::CAP_PROP_FRAME_WIDTH, 1920);
+//     capture.set(cv::CAP_PROP_FRAME_HEIGHT, 1080);
 //     capture.set(cv::CAP_PROP_FPS, 30);
 // #endif
 //   }
@@ -180,7 +182,7 @@ absl::Status RunMPPGraph() {
 
     mapped_kinect_status_memory = (char *) mmap(NULL, sizeof(char), PROT_READ | PROT_WRITE, MAP_SHARED, fd_kinectS, 0);
     LOG(INFO) <<" mapped_kinect_status_memory: "<< int(*mapped_kinect_status_memory);
-  while (grab_frames &&  *mapped_kinect_status_memory) {
+  while (grab_frames &&  *mapped_kinect_status_memory) { //latter checking if kinect can be still on
 //  while (grab_frames ) {
 
       LOG(INFO) <<" mapped_kinect_status_memory: "<< int(*mapped_kinect_status_memory);
@@ -307,32 +309,34 @@ absl::Status RunMPPGraph() {
       cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
 
     clock_t end = clock();
-//
-//    double seconds =  (double(end) - double(start)) / double(CLOCKS_PER_SEC);
-//    double fpsLive = double(num_frames) / double(seconds);
-//    putText(output_frame_mat, "FPS: " + std::to_string(fpsLive), {50,50}, cv::FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255),2);
-//    cv::imshow(kWindowName, output_frame_mat);
 
-    // if (save_video) {
-    //   if (!writer.isOpened()) {
-    //     LOG(INFO) << "Prepare video writer.";
-    //     writer.open(absl::GetFlag(FLAGS_output_video_path),
-    //                 mediapipe::fourcc('a', 'v', 'c', '1'),  // .mp4
-    //                 capture.get(cv::CAP_PROP_FPS), output_frame_mat.size());
-    //     RET_CHECK(writer.isOpened());
-    //   }
-    //   writer.write(output_frame_mat);
-    // } else {
+    double seconds =  (double(end) - double(start)) / double(CLOCKS_PER_SEC);
+    double fpsLive = double(num_frames) / double(seconds);
+    putText(output_frame_mat, "FPS: " + std::to_string(fpsLive), {50,50}, cv::FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255),2);
+    cv::imshow(kWindowName, output_frame_mat);
+    cv::waitKey(5);
+
+     if (save_video) {
+       if (!writer.isOpened()) {
+         LOG(INFO) << "Prepare video writer.";
+         writer.open("InteractionModel.mp4",
+                     mediapipe::fourcc('a', 'v', 'c', '1'),  // .mp4
+                     20, output_frame_mat.size());
+         RET_CHECK(writer.isOpened());
+       }
+       writer.write(output_frame_mat);
+     }
+//     else {
 
       // Press any key to exit.
-      const int pressed_key = cv::waitKey(1);
-      if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
+//      const int pressed_key = cv::waitKey(1);
+//      if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
     // }
       listener.release(frames);
   }
 
   LOG(INFO) << "Shutting down.";
-  // if (writer.isOpened()) writer.release();
+   if (writer.isOpened()) writer.release();
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputDepthStream));
   return graph.WaitUntilDone();

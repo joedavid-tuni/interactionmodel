@@ -181,7 +181,7 @@ namespace  mediapipe {
                 normalized_y = c.landmark(9).y();
 
                 pixel_x = normalized_x * pixel_x;
-                pixel_y = normalized_y * pixel_y;
+                pixel_y = (1-normalized_y) * pixel_y;
 
                 LOG(INFO) << "(norm) Landmark 9 X: " << normalized_x;
                 LOG(INFO) << "(norm) Landmark 9 Y: " << normalized_y;
@@ -206,25 +206,25 @@ namespace  mediapipe {
 
 
 
-        if (!cc->Inputs().Tag(imageTag).IsEmpty()) {
-            const ImageFrame& image_frame =
-                    cc->Inputs().Tag(imageTag).Value().Get<ImageFrame>();
-            ImageFormat::Format format = image_frame.Format();
-            cv::Mat original_mat = formats::MatView(&image_frame);
-
-//            LOG(INFO) << "FORMAT: " << format;
-//            LOG(INFO) << "Byte Depth: " <<  image_frame.ByteDepth();
-//            LOG(INFO) << "Height: " << image_frame.Height();
-//            LOG(INFO) << "Width: " <<  image_frame.Width() ;
+//        if (!cc->Inputs().Tag(imageTag).IsEmpty()) {
+//            const ImageFrame& image_frame =
+//                    cc->Inputs().Tag(imageTag).Value().Get<ImageFrame>();
+//            ImageFormat::Format format = image_frame.Format();
+//            cv::Mat original_mat = formats::MatView(&image_frame);
 //
-            float landmark_9_depth_pixel = original_mat.at<float>(pixel_y, pixel_x);
-
-            LOG(INFO) << "landmark_9_depth_pixel " << landmark_9_depth_pixel*4096.0f /10.0 << "cm";
-
-            cv::imshow("Depth2Rgb", original_mat);
-            cv::waitKey(1);
-
-        }
+////            LOG(INFO) << "FORMAT: " << format;
+////            LOG(INFO) << "Byte Depth: " <<  image_frame.ByteDepth();
+////            LOG(INFO) << "Height: " << image_frame.Height();
+////            LOG(INFO) << "Width: " <<  image_frame.Width() ;
+////
+//            float landmark_9_depth_pixel = original_mat.at<float>(pixel_y, pixel_x);
+//
+//            LOG(INFO) << "landmark_9_depth_pixel " << landmark_9_depth_pixel*4096.0f /10.0 << "cm";
+//
+//            cv::imshow("Depth2Rgb", original_mat);
+//            cv::waitKey(1);
+//
+//        }
 
 
 //        int THUMB   = 0;
