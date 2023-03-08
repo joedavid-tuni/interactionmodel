@@ -46,6 +46,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "iomanip"
+
 constexpr char kInputStream[] = "input_video";
 constexpr char kInputDepthStream[] = "depth_stream";
 constexpr char kOutputStream[] = "output_video";
@@ -62,7 +64,22 @@ ABSL_FLAG(std::string, output_video_path, "",
           "Full path of where to save result (.mp4 only). "
           "If not provided, show result in a window.");
 
+//const std::string currentDateTime() {
+//    time_t     now = time(0);
+//    struct tm  tstruct;
+//    char       buf[80];
+//    tstruct = *localtime(&now);
+//    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+//    // for more information about date/time format
+//    strftime(buf, sizeof(buf), "%Y%m%d_%X", &tstruct);
+//
+//    return buf;
+//}
+
+
 absl::Status RunMPPGraph() {
+
+
   std::string calculator_graph_config_contents;
   MP_RETURN_IF_ERROR(mediapipe::file::GetContents(
       absl::GetFlag(FLAGS_calculator_graph_config_file),
@@ -182,12 +199,15 @@ absl::Status RunMPPGraph() {
 
     mapped_kinect_status_memory = (char *) mmap(NULL, sizeof(char), PROT_READ | PROT_WRITE, MAP_SHARED, fd_kinectS, 0);
     LOG(INFO) <<" mapped_kinect_status_memory: "<< int(*mapped_kinect_status_memory);
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+
   while (grab_frames &&  *mapped_kinect_status_memory) { //latter checking if kinect can be still on
 //  while (grab_frames ) {
 
       LOG(INFO) <<" mapped_kinect_status_memory: "<< int(*mapped_kinect_status_memory);
 
-    clock_t start = clock();
+//    clock_t start = clock(); // uncomment if you want to display fps
 
     if (!listener.waitForNewFrame(frames, 10*1000)) // 10 seconds
      {
@@ -308,18 +328,24 @@ absl::Status RunMPPGraph() {
     else
       cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
 
-    clock_t end = clock();
+    // uncomment next 4 lines if you want to display FPS
+//    clock_t end = clock();
+//    double seconds =  (double(end) - double(start)) / double(CLOCKS_PER_SEC);
+//    double fpsLive = double(num_frames) / double(seconds);
+//    putText(output_frame_mat, "FPS: " + std::to_string(fpsLive), {50,50}, cv::FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255),2);
 
-    double seconds =  (double(end) - double(start)) / double(CLOCKS_PER_SEC);
-    double fpsLive = double(num_frames) / double(seconds);
-    putText(output_frame_mat, "FPS: " + std::to_string(fpsLive), {50,50}, cv::FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255),2);
-    cv::imshow(kWindowName, output_frame_mat);
-    cv::waitKey(5);
+//     uncomment if you want to preview output frames
+// it a   cv::imshow(kWindowName, output_frame_mat);
+//    cv::waitKey(5);
 
      if (save_video) {
        if (!writer.isOpened()) {
          LOG(INFO) << "Prepare video writer.";
-         writer.open("InteractionModel.mp4",
+           std::ostringstream dateTimeStream;
+           dateTimeStream << std::put_time(&tm, "%Y%m%d_%H%M%S");
+         auto dateTimeString = dateTimeStream.str();
+        auto filename = std::string("InteractionModel_")+dateTimeString+".mp4";
+         writer.open(std::string(filename),
                      mediapipe::fourcc('a', 'v', 'c', '1'),  // .mp4
                      20, output_frame_mat.size());
          RET_CHECK(writer.isOpened());
@@ -341,6 +367,7 @@ absl::Status RunMPPGraph() {
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputDepthStream));
   return graph.WaitUntilDone();
 }
+
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);

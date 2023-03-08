@@ -88,7 +88,7 @@ node {
   output_stream: "FLAG:hand_presence"
   options: {
     [mediapipe.ThresholdingCalculatorOptions.ext] {
-      threshold: 0.5
+      threshold: 0.2
     }
   }
 }

@@ -96,6 +96,7 @@ namespace  mediapipe {
     ::mediapipe::Status InteractionModelCalculator::Process(CalculatorContext *cc){
 
         LOG(INFO) << " ";
+//        bool rightHand = false;
 
 
 
@@ -149,7 +150,15 @@ namespace  mediapipe {
 //                    LOG(INFO) << "Hand i: "<< i;
                     LOG(INFO) << "LABEL: "<< cl.classification(i).label();
                     LOG(INFO) << "SCORE: "<< cl.classification(i).score();
+
+
                 }
+//                    if (cl.classification(0).label() == "Right"){
+//                        rightHand = true;
+//                    }
+//                    else {
+//                        rightHand = false;
+//                    }
             }
 //            labels.resize(classifications.classification_size());
 //            scores.resize(classifications.classification_size());
@@ -201,9 +210,10 @@ namespace  mediapipe {
 
         // mapping pixel coordinates to shared memory
 
-        * mapped_cursor_memory = pixel_x;
-        * (mapped_cursor_memory + 1) = pixel_y;
-
+//        if (rightHand) {
+            *mapped_cursor_memory = pixel_x;
+            *(mapped_cursor_memory + 1) = pixel_y;
+//        }
 
 
 //        if (!cc->Inputs().Tag(imageTag).IsEmpty()) {
